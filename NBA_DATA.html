@@ -3,480 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NBA DATA 2024-25 前100名球員數據儀表板</title>
+    <title>NBA API 測試工具</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 20px 0;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
-
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
         h1 {
+            color: #333;
             text-align: center;
-            font-size: 2.8em;
-            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-            font-weight: bold;
         }
-
-        .subtitle {
-            text-align: center;
-            color: #666;
-            font-size: 1.1em;
+        
+        .api-section {
             margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        
+        .api-section h3 {
+            color: #1da1f2;
+            margin-top: 0;
+            font-size: 1.4em;
+        }
+        
+        .input-group {
             display: flex;
-            align-items: center;
-            justify-content: center;
             gap: 10px;
-        }
-
-        .controls {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
         }
-
-        .search-container {
-            position: relative;
+        
+        input[type="text"], select {
             flex: 1;
-            max-width: 400px;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 15px 50px 15px 20px;
+            min-width: 200px;
+            padding: 12px;
             border: 2px solid #ddd;
-            border-radius: 25px;
+            border-radius: 8px;
             font-size: 16px;
-            transition: all 0.3s;
-            background: white;
+            transition: border-color 0.3s;
         }
-
-        input[type="text"]:focus {
+        
+        input[type="text"]:focus, select:focus {
             outline: none;
-            border-color: #2a5298;
-            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-
-        .search-icon {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
-            font-size: 18px;
-        }
-
-        select {
-            padding: 15px 20px;
-            border: 2px solid #ddd;
-            border-radius: 25px;
-            font-size: 16px;
-            background: white;
-            cursor: pointer;
-            min-width: 150px;
-        }
-
+        
         button {
-            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            background: linear-gradient(45deg, #667eea, #764ba2);
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
+            padding: 12px 25px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
             transition: all 0.3s;
             min-width: 120px;
         }
-
+        
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(42, 82, 152, 0.3);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
-
+        
         button:disabled {
             background: #ccc;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
-
-        .stats-summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.95);
+        
+        .result-box {
+            background: #2c3e50;
+            color: #ecf0f1;
             padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-
-        .stat-number {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: #1e3c72;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 0.9em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .players-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
-        }
-
-        .player-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-            position: relative;
-            height: 350px;
-            cursor: pointer;
-            perspective: 1000px;
-        }
-
-        .player-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
-        }
-
-        .card-inner {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            text-align: center;
-            transition: transform 0.8s;
-            transform-style: preserve-3d;
-        }
-
-        .player-card.flipped .card-inner {
-            transform: rotateY(180deg);
-        }
-
-        .card-front, .card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            border-radius: 20px;
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card-front {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .card-back {
-            background: rgba(255, 255, 255, 0.95);
-            transform: rotateY(180deg);
+            border-radius: 8px;
+            margin-top: 15px;
+            max-height: 400px;
             overflow-y: auto;
-        }
-
-        .player-photo {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            margin-bottom: 20px;
-            object-fit: cover;
-            background: rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3em;
-        }
-
-        .card-front .player-name {
-            font-size: 1.5em;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-align: center;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .card-front .player-team {
-            font-size: 1.1em;
-            opacity: 0.9;
-            margin-bottom: 15px;
-        }
-
-        .card-front .hoopshype-rank {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.9em;
-            backdrop-filter: blur(10px);
-        }
-
-        .flip-hint {
-            position: absolute;
-            bottom: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.8em;
-            opacity: 0.7;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.7; }
-            50% { opacity: 1; }
-        }
-
-        .ranking-badge {
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
+            font-family: 'Monaco', 'Menlo', monospace;
             font-size: 14px;
-            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-            z-index: 10;
+            white-space: pre-wrap;
+            border-left: 4px solid #3498db;
         }
-
-        .top-10 {
-            background: linear-gradient(45deg, #ffd700, #ffed4e);
-            color: #333;
-            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
-        }
-
-        .top-25 {
-            background: linear-gradient(45deg, #c0c0c0, #e8e8e8);
-            color: #333;
-            box-shadow: 0 4px 15px rgba(192, 192, 192, 0.5);
-        }
-
-        .top-50 {
-            background: linear-gradient(45deg, #cd7f32, #deb887);
-            color: white;
-            box-shadow: 0 4px 15px rgba(205, 127, 50, 0.5);
-        }
-
-        .card-back .player-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        .card-back .player-name {
-            font-size: 1.4em;
-            font-weight: bold;
-            color: #1e3c72;
-        }
-
-        .card-back .player-position {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.8em;
-            font-weight: bold;
-        }
-
-        .player-info {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-        }
-
-        .info-label {
-            color: #666;
-            font-size: 0.9em;
-        }
-
-        .info-value {
-            font-weight: bold;
-            color: #333;
-        }
-
-        .advanced-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .stat-item {
-            text-align: center;
-            padding: 10px;
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            border-radius: 10px;
-        }
-
-        .stat-value {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #1e3c72;
-            margin-bottom: 5px;
-        }
-
-        .stat-name {
-            font-size: 0.8em;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .placeholder-card {
-            opacity: 0.7;
-            border: 2px dashed #ccc;
-        }
-
-        .placeholder-card .card-front {
-            background: #ccc;
-        }
-
-        .placeholder-content {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 50px;
-            color: white;
-            font-size: 1.2em;
-        }
-
-        .loading-spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top: 4px solid white;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error {
-            background: #ff6b6b;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .no-results {
-            text-align: center;
-            padding: 50px;
-            color: white;
-            font-size: 1.2em;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin: 30px 0;
-        }
-
-        .page-btn {
-            background: rgba(255, 255, 255, 0.9);
-            color: #1e3c72;
-            border: 2px solid #1e3c72;
-            padding: 10px 15px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            min-width: 40px;
-            text-align: center;
-        }
-
-        .page-btn:hover, .page-btn.active {
-            background: #1e3c72;
-            color: white;
-        }
-
-        .page-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .api-status {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
+        
         .status-indicator {
             display: inline-block;
             width: 12px;
@@ -484,770 +114,248 @@
             border-radius: 50%;
             margin-right: 8px;
         }
-
-        .status-online { background: #28a745; }
-        .status-offline { background: #dc3545; }
-        .status-testing { background: #ffc107; }
-
-        @media (max-width: 768px) {
-            .players-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .controls {
-                flex-direction: column;
-            }
-            
-            .search-container {
-                max-width: 100%;
-            }
-            
-            h1 {
-                font-size: 2em;
-            }
-            
-            .advanced-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        
+        .status-success { background-color: #27ae60; }
+        .status-error { background-color: #e74c3c; }
+        .status-pending { background-color: #f39c12; }
+        
+        .url-display {
+            background: #ecf0f1;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin-bottom: 10px;
+            word-break: break-all;
+            border-left: 4px solid #3498db;
+        }
+        
+        .tips {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .tips h4 {
+            margin-top: 0;
+            color: #2e7d32;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e1e8ed;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        .tab.active {
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+        
+        .tab:hover {
+            background: #f5f5f5;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="container">
-            <h1>🏀 NBA data 2024-25 前100名球員</h1>
-            <p class="subtitle">
-                NBA球員完整統計數據
-            </p>
-            
-            <!-- API 狀態顯示 -->
-            <div class="api-status" id="apiStatus">
-                <span class="status-indicator status-testing" id="statusIndicator"></span>
-                <span id="statusText">正在檢測 API 連接...</span>
-            </div>
-            
-            <div class="controls">
-                <div class="search-container">
-                    <input type="text" id="searchInput" placeholder="搜尋球員姓名...">
-                    <span class="search-icon">🔍</span>
-                </div>
-                
-                <select id="teamFilter">
-                    <option value="">所有球隊</option>
-                </select>
-                
-                <select id="rankFilter">
-                    <option value="">所有排名</option>
-                    <option value="1-10">前10名</option>
-                    <option value="11-25">11-25名</option>
-                    <option value="26-50">26-50名</option>
-                    <option value="51-100">51-100名</option>
-                </select>
-                
-                <select id="dataTypeSelect">
-                    <option value="advanced">進階統計</option>
-                    <option value="totals">基本統計</option>
-                </select>
-                
-                <button onclick="loadPlayers()">載入數據</button>
-                <button onclick="clearFilters()">清除篩選</button>
-            </div>
-        </div>
-    </div>
-
     <div class="container">
-        <div class="stats-summary" id="statsSummary" style="display: none;">
-            <div class="stat-card">
-                <div class="stat-number" id="totalPlayers">0</div>
-                <div class="stat-label">TOP 100 球員</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="avgAge">0</div>
-                <div class="stat-label">平均年齡</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="totalTeams">0</div>
-                <div class="stat-label">球隊數量</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="avgPER">0</div>
-                <div class="stat-label">平均PER</div>
+        <h1>🏀 NBA API 測試工具</h1>
+        
+        <div class="tips">
+            <h4>🔍 API 分析結果</h4>
+            <p><strong>問題診斷：</strong> 你原來的API端點 <code>http://b8c40s8.143.198.70.30.sslip.io</code> 可能已經失效或需要特定的參數格式。</p>
+            <p><strong>建議方案：</strong> 使用更新的API端點 <code>http://rest.nbaapi.com</code> 或其他可用的NBA API服務。</p>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('old-api')">原始 API 測試</div>
+            <div class="tab" onclick="switchTab('new-api')">新版 API 測試</div>
+            <div class="tab" onclick="switchTab('free-api')">免費 API 測試</div>
+        </div>
+        
+        <!-- 原始API測試 -->
+        <div id="old-api" class="tab-content active">
+            <div class="api-section">
+                <h3>🔴 原始 API 測試 (可能已失效)</h3>
+                <div class="input-group">
+                    <input type="text" id="oldPlayerName" placeholder="球員姓名 (例: Kyrie Irving)" value="Kyrie Irving">
+                    <button onclick="testOldAPI()">測試原始API</button>
+                </div>
+                <div class="url-display" id="oldApiUrl">
+                    URL將在這裡顯示...
+                </div>
+                <div id="oldApiResult" class="result-box" style="display:none;"></div>
             </div>
         </div>
-
-        <div id="loadingDiv" class="loading" style="display: none;">
-            <div class="loading-spinner"></div>
-            正在載入NBA前100名球員數據...
+        
+        <!-- 新版API測試 -->
+        <div id="new-api" class="tab-content">
+            <div class="api-section">
+                <h3>✅ 新版 NBA API 測試</h3>
+                <div class="input-group">
+                    <input type="text" id="newPlayerName" placeholder="球員姓名 (例: LeBron James)" value="LeBron James">
+                    <select id="dataType">
+                        <option value="totals">基本統計 (Totals)</option>
+                        <option value="advanced">進階統計 (Advanced)</option>
+                    </select>
+                    <button onclick="testNewAPI()">測試新版API</button>
+                </div>
+                <div class="url-display" id="newApiUrl">
+                    URL將在這裡顯示...
+                </div>
+                <div id="newApiResult" class="result-box" style="display:none;"></div>
+            </div>
         </div>
-
-        <div id="errorDiv" class="error" style="display: none;"></div>
-
-        <div class="pagination" id="pagination" style="display: none;"></div>
-
-        <div class="players-grid" id="playersContainer"></div>
-
-        <div class="pagination" id="paginationBottom" style="display: none;"></div>
+        
+        <!-- 免費API測試 -->
+        <div id="free-api" class="tab-content">
+            <div class="api-section">
+                <h3>🆓 免費 NBA API 測試</h3>
+                <div class="input-group">
+                    <select id="freeApiType">
+                        <option value="players">所有球員列表</option>
+                        <option value="teams">所有球隊列表</option>
+                        <option value="games">今日比賽</option>
+                    </select>
+                    <button onclick="testFreeAPI()">測試免費API</button>
+                </div>
+                <div class="url-display" id="freeApiUrl">
+                    URL將在這裡顯示...
+                </div>
+                <div id="freeApiResult" class="result-box" style="display:none;"></div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // API 配置 - 支援多個端點
-        const API_ENDPOINTS = [
-            'https://rest.nbaapi.com/api',  // 嘗試 HTTPS 版本
-            'http://rest.nbaapi.com/api',   // 原始 HTTP 版本
-            // 可以添加備用 API
-        ];
-        
-        let currentApiEndpoint = null;
-
-        // HoopsHype 2024-25 前100名球員名單 (包含API名稱映射)
-        const top100Players = [
-            "Nikola Jokic", "Luka Doncic", "Shai Gilgeous-Alexander", "Giannis Antetokounmpo", "Joel Embiid",
-            "Jayson Tatum", "Anthony Edwards", "Jalen Brunson", "Anthony Davis", "Victor Wembanyama",
-            "Kevin Durant", "Tyrese Haliburton", "LeBron James", "Stephen Curry", "Tyrese Maxey",
-            "Devin Booker", "Donovan Mitchell", "Jaylen Brown", "Ja Morant", "Domantas Sabonis",
-            "Damian Lillard", "Zion Williamson", "Paolo Banchero", "De'Aaron Fox", "Pascal Siakam",
-            "Kawhi Leonard", "Paul George", "Bam Adebayo", "Trae Young", "Jimmy Butler",
-            "Karl-Anthony Towns", "Rudy Gobert", "Kyrie Irving", "Lauri Markkanen", "Scottie Barnes",
-            "Jamal Murray", "Cade Cunningham", "Julius Randle", "Alperen Sengun", "Chet Holmgren",
-            "LaMelo Ball", "Jaren Jackson Jr", "Jalen Williams", "Kristaps Porzingis", "DeMar DeRozan",
-            "Brandon Ingram", "James Harden", "Franz Wagner", "Desmond Bane", "Derrick White",
-            "Evan Mobley", "Darius Garland", "Myles Turner", "Jrue Holiday", "Dejounte Murray",
-            "Mikal Bridges", "OG Anunoby", "Brandon Miller", "Aaron Gordon", "Jarrett Allen",
-            "Kyle Kuzma", "Zach LaVine", "Austin Reaves", "Michael Porter Jr", "Jalen Green",
-            "Fred VanVleet", "Miles Bridges", "Jalen Johnson", "Tyler Herro", "Coby White",
-            "CJ McCollum", "Josh Giddey", "Bradley Beal", "Trey Murphy", "D'Angelo Russell",
-            "Devin Vassell", "Immanuel Quickley", "Herb Jones", "Jaden McDaniels", "Jerami Grant",
-            "Josh Hart", "Keegan Murray", "Jonathan Kuminga", "Malik Monk", "Cam Thomas",
-            "Donte DiVincenzo", "Anfernee Simons", "Jabari Smith Jr", "Nikola Vucevic", "Tobias Harris",
-            "Naz Reid", "Luguentz Dort", "Jalen Suggs", "PJ Washington", "RJ Barrett",
-            "Khris Middleton", "Deandre Ayton", "Collin Sexton", "Dereck Lively", "Klay Thompson"
-        ];
-
-        // 球員姓名API映射表 - 處理特殊情況
-        const playerNameMappings = {
-            "Nikola Jokic": ["Nikola Jokic", "Nikola Jokić"],
-            "Luka Doncic": ["Luka Doncic", "Luka Dončić", "Luka Dončic"],
-            "Kristaps Porzingis": ["Kristaps Porzingis", "Kristaps Porziņģis", "Kristaps Porzinigis"],
-            "Herb Jones": ["Herb Jones", "Herbert Jones", "Herbert Keyshawn Jones"],
-            "Nikola Vucevic": ["Nikola Vucevic", "Nikola Vučević", "Nikola Vucevic"],
-            "PJ Washington": ["PJ Washington", "P.J. Washington", "Paul Jamaine Washington"],
-            "RJ Barrett": ["RJ Barrett", "R.J. Barrett", "Rowan Barrett Jr."],
-            "CJ McCollum": ["CJ McCollum", "C.J. McCollum", "Christian James McCollum"],
-            "OG Anunoby": ["OG Anunoby", "O.G. Anunoby", "Ogugua Anunoby"],
-            "Alperen Sengun": ["Alperen Sengun", "Alperen Şengün"],
-            "Jaren Jackson Jr": ["Jaren Jackson Jr", "Jaren Jackson Jr.", "Jaren Walter Jackson Jr."],
-            "Karl-Anthony Towns": ["Karl-Anthony Towns", "Karl Anthony Towns"]
-        };
-
-        // 模擬數據生成器（作為備用方案）
-        function generateMockPlayerData(playerName, rank) {
-            const teams = ['LAL', 'GSW', 'BOS', 'MIA', 'CHI', 'NYK', 'LAC', 'PHX', 'DAL', 'MIL', 'DEN', 'PHI'];
-            const positions = ['PG', 'SG', 'SF', 'PF', 'C'];
-            
-            return {
-                playerName: playerName,
-                team: teams[Math.floor(Math.random() * teams.length)],
-                position: positions[Math.floor(Math.random() * positions.length)],
-                age: Math.floor(Math.random() * 15) + 20, // 20-35歲
-                season: 2024,
-                hoopsHypeRank: rank,
-                originalName: playerName,
-                isMockData: true,
-                // 基本統計（模擬）
-                points: Math.floor(Math.random() * 25) + 10,
-                assists: Math.floor(Math.random() * 10) + 2,
-                totalRb: Math.floor(Math.random() * 12) + 4,
-                steals: Math.floor(Math.random() * 3) + 0.5,
-                fieldPercent: (Math.random() * 0.3 + 0.4), // 40-70%
-                threePercent: (Math.random() * 0.25 + 0.3), // 30-55%
-                // 進階統計（模擬）
-                per: Math.random() * 20 + 10, // 10-30
-                tsPercent: Math.random() * 0.2 + 0.5, // 50-70%
-                usagePercent: Math.random() * 20 + 15, // 15-35%
-                winShares: Math.random() * 15 + 2, // 2-17
-                vorp: Math.random() * 8 + 1, // 1-9
-                box: Math.random() * 10 - 2 // -2到8
-            };
-        }
-
-        // 批量請求配置
-        const BATCH_SIZE = 8; // 減少批次大小以提高穩定性
-        const REQUEST_DELAY = 100; // 增加延遲時間
-        const MAX_CONCURRENT = 3; // 減少併發數
-
-        let allPlayers = [];
-        let filteredPlayers = [];
-        let currentPage = 1;
-        const playersPerPage = 12;
-        let currentDataType = 'advanced';
-
-        // 頁面載入時初始化
-        window.onload = function() {
-            populateFilters();
-            checkApiStatus();
-        };
-
-        // 檢查 API 狀態
-        async function checkApiStatus() {
-            const statusIndicator = document.getElementById('statusIndicator');
-            const statusText = document.getElementById('statusText');
-            
-            for (const endpoint of API_ENDPOINTS) {
-                try {
-                    statusText.textContent = `正在測試 ${endpoint}...`;
-                    
-                    // 測試 API 連接
-                    const response = await fetch(`${endpoint}/PlayerDataAdvanced/name/LeBron James`, {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                        },
-                        // 設置超時
-                        signal: AbortSignal.timeout(5000)
-                    });
-                    
-                    if (response.ok) {
-                        currentApiEndpoint = endpoint;
-                        statusIndicator.className = 'status-indicator status-online';
-                        statusText.textContent = `✅ API 連接正常 (${endpoint.includes('https') ? 'HTTPS' : 'HTTP'})`;
-                        console.log(`✅ API 測試成功: ${endpoint}`);
-                        
-                        // 自動載入數據
-                        setTimeout(() => loadPlayers(), 1000);
-                        return;
-                    }
-                } catch (error) {
-                    console.warn(`❌ API 測試失敗: ${endpoint} - ${error.message}`);
-                }
-            }
-            
-            // 所有 API 都失敗
-            statusIndicator.className = 'status-indicator status-offline';
-            statusText.textContent = '❌ API 無法連接，將使用模擬數據';
-            currentApiEndpoint = null;
-            
-            // 顯示模擬數據選項
-            setTimeout(() => loadPlayersWithMockData(), 2000);
-        }
-
-        // 使用模擬數據載入球員
-        function loadPlayersWithMockData() {
-            const loadingDiv = document.getElementById('loadingDiv');
-            const errorDiv = document.getElementById('errorDiv');
-            
-            loadingDiv.style.display = 'block';
-            loadingDiv.innerHTML = `
-                <div class="loading-spinner"></div>
-                🎲 正在生成模擬 NBA 數據...
-                <br><small>由於 API 無法連接，將顯示演示數據</small>
-            `;
-            
-            // 生成模擬數據
-            allPlayers = top100Players.map((playerName, index) => 
-                generateMockPlayerData(playerName, index + 1)
-            );
-            
-            updateFilterOptions();
-            applyFilters();
-            updateStatsSummary();
-            
-            loadingDiv.style.display = 'none';
-            document.getElementById('statsSummary').style.display = 'grid';
-            
-            // 顯示模擬數據警告
-            errorDiv.style.display = 'block';
-            errorDiv.innerHTML = `
-                <h3>🎲 演示模式</h3>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 15px 0;">
-                    <div style="text-align: center; padding: 15px; background: #d1ecf1; border-radius: 10px;">
-                        <div style="font-size: 1.5em; font-weight: bold; color: #0c5460;">🔧</div>
-                        <div style="color: #0c5460;">功能完全正常</div>
-                    </div>
-                </div>
-                <p style="margin: 10px 0; color: #856404;">
-                    <strong>原因:</strong> GitHub Pages 的 HTTPS 環境無法訪問 HTTP API
-                </p>
-                <p style="margin: 10px 0; color: #856404;">
-                    <strong>解決方案:</strong> 在本地環境運行或使用支援 HTTPS 的 API
-                </p>
-                <button onclick="this.parentElement.style.display='none'" 
-                        style="margin-top: 15px; background: #856404; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-                    我知道了
-                </button>
-            `;
-        }
-
-        // 載入球員數據
-        async function loadPlayers() {
-            const loadingDiv = document.getElementById('loadingDiv');
-            const errorDiv = document.getElementById('errorDiv');
-            const playersContainer = document.getElementById('playersContainer');
-            const statsSummary = document.getElementById('statsSummary');
-            
-            loadingDiv.style.display = 'block';
-            errorDiv.style.display = 'none';
-            playersContainer.innerHTML = '';
-            statsSummary.style.display = 'none';
-            
-            currentDataType = document.getElementById('dataTypeSelect').value;
-            const endpoint = currentDataType === 'advanced' ? 'PlayerDataAdvanced' : 'PlayerDataTotals';
-            
-            // 檢查是否有可用的 API
-            if (!currentApiEndpoint) {
-                console.log('🎲 API 不可用，使用模擬數據');
-                return loadPlayersWithMockData();
-            }
-            
-            try {
-                console.log('🚀 開始載入真實 NBA 數據...');
-                await loadPlayersIndividually(endpoint);
-                
-            } catch (error) {
-                console.error('載入球員數據時出錯:', error);
-                loadingDiv.style.display = 'none';
-                errorDiv.style.display = 'block';
-                errorDiv.innerHTML = `
-                    <h3>載入數據時發生錯誤</h3>
-                    <p>${error.message}</p>
-                    <div style="margin: 15px 0;">
-                        <p><strong>可能的原因：</strong></p>
-                        <ul style="text-align: left; margin-top: 10px;">
-                            <li>🔒 HTTPS/HTTP 混合內容錯誤</li>
-                            <li>🌐 CORS 政策限制</li>
-                            <li>⚡ API 服務器暫時無法訪問</li>
-                            <li>🔌 網路連接問題</li>
-                        </ul>
-                    </div>
-                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
-                        <button onclick="loadPlayers()" style="background: white; color: #ff6b6b; border: 2px solid white;">
-                            🔄 重新載入
-                        </button>
-                        <button onclick="loadPlayersWithMockData()" style="background: #ffc107; color: #212529; border: 2px solid #ffc107;">
-                            🎲 使用演示數據
-                        </button>
-                    </div>
-                `;
-            }
-        }
-
-        // 高速批量載入球員數據
-        async function loadPlayersIndividually(endpoint) {
-            const loadingDiv = document.getElementById('loadingDiv');
-            
-            allPlayers = [];
-            let successCount = 0;
-            let errorCount = 0;
-            
-            // 分批次處理，每批併發請求
-            const totalBatches = Math.ceil(top100Players.length / BATCH_SIZE);
-            
-            for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
-                const startIndex = batchIndex * BATCH_SIZE;
-                const endIndex = Math.min(startIndex + BATCH_SIZE, top100Players.length);
-                const batch = top100Players.slice(startIndex, endIndex);
-                
-                // 更新進度
-                const progress = ((batchIndex + 1) / totalBatches * 100);
-                loadingDiv.innerHTML = `
-                    <div class="loading-spinner"></div>
-                    🚀 正在載入真實數據... ${progress.toFixed(0)}%
-                    <br>處理第 ${batchIndex + 1}/${totalBatches} 批 (${batch.length} 位球員)
-                    <br><small>✅ 成功: ${successCount} | ❌ 失敗: ${errorCount}</small>
-                    <br><small>🌐 API: ${currentApiEndpoint}</small>
-                `;
-                
-                // 併發處理當前批次
-                const batchPromises = batch.map(async (playerName, batchPlayerIndex) => {
-                    const playerIndex = startIndex + batchPlayerIndex;
-                    return await loadSinglePlayer(playerName, playerIndex, endpoint);
-                });
-                
-                // 等待當前批次完成
-                const batchResults = await Promise.allSettled(batchPromises);
-                
-                // 統計結果
-                batchResults.forEach((result, batchPlayerIndex) => {
-                    const playerIndex = startIndex + batchPlayerIndex;
-                    if (result.status === 'fulfilled' && result.value) {
-                        allPlayers.push(result.value);
-                        successCount++;
-                    } else {
-                        // 創建佔位符或使用模擬數據
-                        const mockData = generateMockPlayerData(top100Players[playerIndex], playerIndex + 1);
-                        mockData.isPlaceholder = true;
-                        allPlayers.push(mockData);
-                        errorCount++;
-                    }
-                });
-                
-                // 實時更新顯示
-                if (batchIndex % 2 === 0 || batchIndex === totalBatches - 1) {
-                    allPlayers.sort((a, b) => a.hoopsHypeRank - b.hoopsHypeRank);
-                    updateFilterOptions();
-                    applyFilters();
-                    updateStatsSummary();
-                    document.getElementById('statsSummary').style.display = 'grid';
-                }
-                
-                // 小延遲避免API限制
-                if (batchIndex < totalBatches - 1) {
-                    await new Promise(resolve => setTimeout(resolve, REQUEST_DELAY));
-                }
-            }
-            
-            console.log(`🎯 載入完成: 成功 ${successCount}/100 位球員 (${(successCount/100*100).toFixed(1)}%)`);
-            
-            // 最終整理和顯示
-            allPlayers.sort((a, b) => a.hoopsHypeRank - b.hoopsHypeRank);
-            updateFilterOptions();
-            applyFilters();
-            updateStatsSummary();
-            
-            loadingDiv.style.display = 'none';
-            document.getElementById('statsSummary').style.display = 'grid';
-            
-            // 顯示結果統計
-            if (errorCount > 0 || successCount < 100) {
-                const errorDiv = document.getElementById('errorDiv');
-                errorDiv.style.display = 'block';
-                errorDiv.innerHTML = `
-                    <h3>🎯 載入完成！</h3>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 15px 0;">
-                        <div style="text-align: center; padding: 10px; background: #d4edda; border-radius: 10px;">
-                            <div style="font-size: 2em; font-weight: bold; color: #155724;">${successCount}</div>
-                            <div style="color: #155724;">真實數據</div>
-                        </div>
-                        <div style="text-align: center; padding: 10px; background: #fff3cd; border-radius: 10px;">
-                            <div style="font-size: 2em; font-weight: bold; color: #856404;">${errorCount}</div>
-                            <div style="color: #856404;">模擬數據</div>
-                        </div>
-                        <div style="text-align: center; padding: 10px; background: #d1ecf1; border-radius: 10px;">
-                            <div style="font-size: 2em; font-weight: bold; color: #0c5460;">${(successCount/100*100).toFixed(1)}%</div>
-                            <div style="color: #0c5460;">成功率</div>
-                        </div>
-                    </div>
-                    <small>⚡ ${successCount > 0 ? '部分使用真實 NBA API 數據' : '完全使用演示數據'}</small>
-                `;
-            }
-        }
-
-        // 載入單個球員數據
-        async function loadSinglePlayer(playerName, playerIndex, endpoint) {
-            try {
-                const nameVariants = playerNameMappings[playerName] || [playerName];
-                
-                for (const variant of nameVariants) {
-                    const encodedName = encodeURIComponent(variant);
-                    const url = `${currentApiEndpoint}/${endpoint}/name/${encodedName}`;
-                    
-                    const response = await fetch(url, {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                        },
-                        // 設置超時
-                        signal: AbortSignal.timeout(8000)
-                    });
-                    
-                    if (response.ok) {
-                        const playerData = await response.json();
-                        if (Array.isArray(playerData) && playerData.length > 0) {
-                            const latestData = playerData.sort((a, b) => b.season - a.season)[0];
-                            latestData.hoopsHypeRank = playerIndex + 1;
-                            latestData.originalName = playerName;
-                            latestData.apiName = variant;
-                            
-                            console.log(`✅ ${playerIndex + 1}/100: ${playerName}`);
-                            return latestData;
-                        }
-                    }
-                }
-                
-                console.warn(`❌ ${playerIndex + 1}/100: ${playerName} - 未找到數據`);
-                return null;
-            } catch (error) {
-                console.error(`💥 ${playerIndex + 1}/100: ${playerName} - 錯誤: ${error.message}`);
-                return null;
-            }
-        }
-
-        // 更新篩選器選項
-        function updateFilterOptions() {
-            const teamFilter = document.getElementById('teamFilter');
-            
-            // 獲取唯一的球隊
-            const teams = [...new Set(allPlayers.map(p => p.team))].sort();
-            teamFilter.innerHTML = '<option value="">所有球隊</option>' + 
-                teams.map(team => `<option value="${team}">${team}</option>`).join('');
-        }
-
-        // 預設填充篩選器
-        function populateFilters() {
-            const teamFilter = document.getElementById('teamFilter');
-            
-            // 常見NBA球隊
-            const commonTeams = ['LAL', 'GSW', 'BOS', 'MIA', 'CHI', 'NYK', 'LAC', 'PHX', 'DAL', 'MIL', 'DEN', 'PHI'];
-            teamFilter.innerHTML = '<option value="">所有球隊</option>' + 
-                commonTeams.map(team => `<option value="${team}">${team}</option>`).join('');
-        }
-
-        // 應用篩選
-        function applyFilters() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const teamFilter = document.getElementById('teamFilter').value;
-            const rankFilter = document.getElementById('rankFilter').value;
-            
-            filteredPlayers = allPlayers.filter(player => {
-                const matchesSearch = !searchTerm || 
-                    player.playerName.toLowerCase().includes(searchTerm);
-                const matchesTeam = !teamFilter || player.team === teamFilter;
-                
-                let matchesRank = true;
-                if (rankFilter) {
-                    const [min, max] = rankFilter.split('-').map(Number);
-                    matchesRank = player.hoopsHypeRank >= min && player.hoopsHypeRank <= max;
-                }
-                
-                return matchesSearch && matchesTeam && matchesRank;
+        function switchTab(tabName) {
+            // 隱藏所有標籤內容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
             });
             
-            currentPage = 1;
-            displayPlayers();
+            // 移除所有標籤的active類
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 顯示選中的標籤內容
+            document.getElementById(tabName).classList.add('active');
+            
+            // 添加active類到點擊的標籤
+            event.target.classList.add('active');
         }
-
-        // 顯示球員
-        function displayPlayers() {
-            const playersContainer = document.getElementById('playersContainer');
-            const startIndex = (currentPage - 1) * playersPerPage;
-            const endIndex = startIndex + playersPerPage;
-            const playersToShow = filteredPlayers.slice(startIndex, endIndex);
+        
+        async function testOldAPI() {
+            const playerName = document.getElementById('oldPlayerName').value;
+            const encodedName = encodeURIComponent(playerName);
+            const url = `http://b8c40s8.143.198.70.30.sslip.io/api/PlayerDataAdvancedPlayoffs/name/${encodedName}`;
             
-            if (playersToShow.length === 0) {
-                playersContainer.innerHTML = '<div class="no-results">找不到符合條件的球員</div>';
-                document.getElementById('pagination').style.display = 'none';
-                document.getElementById('paginationBottom').style.display = 'none';
-                return;
-            }
+            document.getElementById('oldApiUrl').textContent = url;
+            const resultDiv = document.getElementById('oldApiResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<span class="status-indicator status-pending"></span>測試中...';
             
-            playersContainer.innerHTML = playersToShow.map(player => createPlayerCard(player)).join('');
-            updatePagination();
-        }
-
-        // 創建球員卡片
-        function createPlayerCard(player) {
-            const isAdvanced = currentDataType === 'advanced';
-            const rank = player.hoopsHypeRank;
-            
-            let rankClass = '';
-            if (rank <= 10) rankClass = 'top-10';
-            else if (rank <= 25) rankClass = 'top-25';
-            else if (rank <= 50) rankClass = 'top-50';
-            
-            // 數據來源標識
-            const dataSource = player.isMockData || player.isPlaceholder ? '🎲' : '✅';
-            const dataTooltip = player.isMockData || player.isPlaceholder ? '演示數據' : '真實數據';
-            
-            return `
-                <div class="player-card" onclick="flipCard(this)" title="${dataTooltip}">
-                    <div class="ranking-badge ${rankClass}">#${rank}</div>
-                    <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 10px; font-size: 0.8em;" title="${dataTooltip}">
-                        ${dataSource}
-                    </div>
-                    <div class="card-inner">
-                        <!-- 正面 -->
-                        <div class="card-front">
-                            <div class="player-photo">
-                                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3em; background: rgba(255,255,255,0.1); border-radius: 50%;">🏀</div>
-                            </div>
-                            <div class="player-name">${player.playerName}</div>
-                            <div class="player-team">${player.team}</div>
-                            <div class="hoopshype-rank">RANK #${rank}</div>
-                            <div class="flip-hint">點擊查看數據 ↻</div>
-                        </div>
-                        
-                        <!-- 背面 -->
-                        <div class="card-back">
-                            <div class="player-header">
-                                <div class="player-name">${player.playerName}</div>
-                                <div class="player-position">${player.position || 'N/A'}</div>
-                            </div>
-                            
-                            <div class="player-info">
-                                <div class="info-item">
-                                    <span class="info-label">球隊:</span>
-                                    <span class="info-value">${player.team}</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">NBA排名:</span>
-                                    <span class="info-value">#${rank}</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">賽季:</span>
-                                    <span class="info-value">${player.season}-${(player.season + 1).toString().slice(-2)}</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">年齡:</span>
-                                    <span class="info-value">${player.age || 'N/A'}</span>
-                                </div>
-                            </div>
-                            
-                            <div class="advanced-stats">
-                                ${isAdvanced ? `
-                                    <div class="stat-item">
-                                        <div class="stat-value">${(player.per || 0).toFixed(1)}</div>
-                                        <div class="stat-name">PER</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value">${((player.tsPercent || 0) * 100).toFixed(1)}%</div>
-                                        <div class="stat-name">TS%</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value">${(player.usagePercent || 0).toFixed(1)}%</div>
-                                        <div class="stat-name">USG%</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value">${(player.winShares || 0).toFixed(1)}</div>
-                                        <div class="stat-name">WS</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value">${(player.vorp || 0).toFixed(1)}</div>
-                                        <div class="stat-name">VORP</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value">${(player.box || 0).toFixed(1)}</div>
-                                        <div class="stat-name">BPM</div>
-                                    </div>
-                                ` : `
-                                    <div class="stat-item">
-                                        <div class="stat-value">${player.points || 0}</div>
-                                        <div class="stat-name">得分</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value">${player.assists || 0}</div>
-                                        <div class="stat-name">助攻</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value">${player.totalRb || player.rebounds || 0}</div>
-                                        <div class="stat-name">籃板</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value">${((player.fieldPercent || 0) * 100).toFixed(1)}%</div>
-                                        <div class="stat-name">投籃%</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value">${((player.threePercent || 0) * 100).toFixed(1)}%</div>
-                                        <div class="stat-name">三分%</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value">${player.steals || 0}</div>
-                                        <div class="stat-name">抄截</div>
-                                    </div>
-                                `}
-                            </div>
-                            
-                            ${player.isMockData || player.isPlaceholder ? `
-                                <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 8px; font-size: 0.8em; color: #856404;">
-                                    🎲 演示數據 - 僅供展示
-                                </div>
-                            ` : ''}
-                            
-                            <div class="flip-hint" style="margin-top: 15px;">點擊返回照片 ↻</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // 卡片翻轉功能
-        function flipCard(cardElement) {
-            cardElement.classList.toggle('flipped');
-        }
-
-        // 更新統計摘要
-        function updateStatsSummary() {
-            if (filteredPlayers.length === 0) return;
-            
-            const totalPlayers = filteredPlayers.length;
-            const avgAge = (filteredPlayers.reduce((sum, p) => sum + (p.age || 0), 0) / totalPlayers).toFixed(1);
-            const totalTeams = new Set(filteredPlayers.map(p => p.team)).size;
-            
-            let avgPER = 0;
-            if (currentDataType === 'advanced') {
-                avgPER = (filteredPlayers.reduce((sum, p) => sum + (p.per || 0), 0) / totalPlayers).toFixed(1);
-            } else {
-                avgPER = (filteredPlayers.reduce((sum, p) => sum + (p.points || 0), 0) / totalPlayers).toFixed(1);
-            }
-            
-            document.getElementById('totalPlayers').textContent = totalPlayers;
-            document.getElementById('avgAge').textContent = avgAge;
-            document.getElementById('totalTeams').textContent = totalTeams;
-            document.getElementById('avgPER').textContent = avgPER;
-            
-            // 更新標籤
-            const perLabel = document.querySelector('#statsSummary .stat-card:last-child .stat-label');
-            perLabel.textContent = currentDataType === 'advanced' ? '平均PER' : '平均得分';
-        }
-
-        // 更新分頁
-        function updatePagination() {
-            const totalPages = Math.ceil(filteredPlayers.length / playersPerPage);
-            const pagination = document.getElementById('pagination');
-            const paginationBottom = document.getElementById('paginationBottom');
-            
-            if (totalPages <= 1) {
-                pagination.style.display = 'none';
-                paginationBottom.style.display = 'none';
-                return;
-            }
-            
-            const paginationHTML = createPaginationHTML(totalPages);
-            pagination.innerHTML = paginationHTML;
-            paginationBottom.innerHTML = paginationHTML;
-            pagination.style.display = 'flex';
-            paginationBottom.style.display = 'flex';
-        }
-
-        function createPaginationHTML(totalPages) {
-            let html = `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
-            
-            for (let i = 1; i <= totalPages; i++) {
-                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
-                    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
-                } else if (i === currentPage - 3 || i === currentPage + 3) {
-                    html += `<span class="page-btn">...</span>`;
+            try {
+                const response = await fetch(url, {
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `<span class="status-indicator status-success"></span>成功！\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.innerHTML = `<span class="status-indicator status-error"></span>HTTP錯誤 ${response.status}: ${response.statusText}\n\n可能的原因：\n1. API端點已失效\n2. 參數格式不正確\n3. 服務器問題`;
                 }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="status-indicator status-error"></span>網絡錯誤: ${error.message}\n\n可能的原因：\n1. CORS政策阻擋\n2. API服務器離線\n3. 網絡連接問題`;
+            }
+        }
+        
+        async function testNewAPI() {
+            const playerName = document.getElementById('newPlayerName').value;
+            const dataType = document.getElementById('dataType').value;
+            const encodedName = encodeURIComponent(playerName);
+            const url = `http://rest.nbaapi.com/api/PlayerData${dataType.charAt(0).toUpperCase() + dataType.slice(1)}/name/${encodedName}`;
+            
+            document.getElementById('newApiUrl').textContent = url;
+            const resultDiv = document.getElementById('newApiResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<span class="status-indicator status-pending"></span>測試中...';
+            
+            try {
+                const response = await fetch(url, {
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `<span class="status-indicator status-success"></span>成功！找到 ${data.length} 筆記錄\n${JSON.stringify(data.slice(0, 2), null, 2)}${data.length > 2 ? '\n...(顯示前2筆)' : ''}`;
+                } else {
+                    resultDiv.innerHTML = `<span class="status-indicator status-error"></span>HTTP錯誤 ${response.status}: ${response.statusText}`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="status-indicator status-error"></span>網絡錯誤: ${error.message}`;
+            }
+        }
+        
+        async function testFreeAPI() {
+            const apiType = document.getElementById('freeApiType').value;
+            let url;
+            
+            switch(apiType) {
+                case 'players':
+                    url = 'https://www.balldontlie.io/api/v1/players';
+                    break;
+                case 'teams':
+                    url = 'https://www.balldontlie.io/api/v1/teams';
+                    break;
+                case 'games':
+                    const today = new Date().toISOString().split('T')[0];
+                    url = `https://www.balldontlie.io/api/v1/games?dates[]=${today}`;
+                    break;
             }
             
-            html += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
-            return html;
-        }
-
-        function changePage(page) {
-            const totalPages = Math.ceil(filteredPlayers.length / playersPerPage);
-            if (page >= 1 && page <= totalPages) {
-                currentPage = page;
-                displayPlayers();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('freeApiUrl').textContent = url;
+            const resultDiv = document.getElementById('freeApiResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<span class="status-indicator status-pending"></span>測試中...';
+            
+            try {
+                const response = await fetch(url);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `<span class="status-indicator status-success"></span>成功！\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.innerHTML = `<span class="status-indicator status-error"></span>HTTP錯誤 ${response.status}: ${response.statusText}`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="status-indicator status-error"></span>網絡錯誤: ${error.message}`;
             }
         }
-
-        // 清除篩選
-        function clearFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('teamFilter').value = '';
-            document.getElementById('rankFilter').value = '';
-            applyFilters();
-        }
-
-        // 事件監聽器
-        document.getElementById('searchInput').addEventListener('input', applyFilters);
-        document.getElementById('teamFilter').addEventListener('change', applyFilters);
-        document.getElementById('rankFilter').addEventListener('change', applyFilters);
-        document.getElementById('dataTypeSelect').addEventListener('change', loadPlayers);
+        
+        // 頁面載入時自動測試原始API
+        window.onload = function() {
+            document.getElementById('oldApiUrl').textContent = 'http://b8c40s8.143.198.70.30.sslip.io/api/PlayerDataAdvancedPlayoffs/name/Kyrie%20Irving';
+        };
     </script>
 </body>
-</html>="text-align: center; padding: 15px; background: #fff3cd; border-radius: 10px;">
-                        <div style="font-size: 1.5em; font-weight: bold; color: #856404;">⚠️</div>
-                        <div style="color: #856404;">正在顯示模擬數據</div>
-                    </div>
-                    <div style
+</html>
