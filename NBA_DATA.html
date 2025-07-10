@@ -469,6 +469,26 @@
             cursor: not-allowed;
         }
 
+        .api-status {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online { background: #28a745; }
+        .status-offline { background: #dc3545; }
+        .status-testing { background: #ffc107; }
+
         @media (max-width: 768px) {
             .players-grid {
                 grid-template-columns: 1fr;
@@ -499,6 +519,12 @@
             <p class="subtitle">
                 NBA球員完整統計數據
             </p>
+            
+            <!-- API 狀態顯示 -->
+            <div class="api-status" id="apiStatus">
+                <span class="status-indicator status-testing" id="statusIndicator"></span>
+                <span id="statusText">正在檢測 API 連接...</span>
+            </div>
             
             <div class="controls">
                 <div class="search-container">
@@ -564,6 +590,15 @@
     </div>
 
     <script>
+        // API 配置 - 支援多個端點
+        const API_ENDPOINTS = [
+            'https://rest.nbaapi.com/api',  // 嘗試 HTTPS 版本
+            'http://rest.nbaapi.com/api',   // 原始 HTTP 版本
+            // 可以添加備用 API
+        ];
+        
+        let currentApiEndpoint = null;
+
         // HoopsHype 2024-25 前100名球員名單 (包含API名稱映射)
         const top100Players = [
             "Nikola Jokic", "Luka Doncic", "Shai Gilgeous-Alexander", "Giannis Antetokounmpo", "Joel Embiid",
@@ -588,124 +623,6 @@
             "Khris Middleton", "Deandre Ayton", "Collin Sexton", "Dereck Lively", "Klay Thompson"
         ];
 
-        // 球員照片映射表 - 完整的100名球員照片路徑
-        const playerPhotoMappings = {
-            // 前10名 (超級巨星)
-            "Nikola Jokic": "photos/nikola-jokic.jpg",
-            "Luka Doncic": "photos/luka-doncic.jpg", 
-            "Shai Gilgeous-Alexander": "photos/shai-gilgeous-alexander.jpg",
-            "Giannis Antetokounmpo": "photos/giannis-antetokounmpo.jpg",
-            "Joel Embiid": "photos/joel-embiid.jpg",
-            "Jayson Tatum": "photos/jayson-tatum.jpg",
-            "Anthony Edwards": "photos/anthony-edwards.jpg",
-            "Jalen Brunson": "photos/jalen-brunson.jpg",
-            "Anthony Davis": "photos/anthony-davis.jpg",
-            "Victor Wembanyama": "photos/victor-wembanyama.jpg",
-            
-            // 11-25名 (All-Star級別)
-            "Kevin Durant": "photos/kevin-durant.jpg",
-            "Tyrese Haliburton": "photos/tyrese-haliburton.jpg",
-            "LeBron James": "photos/lebron-james.jpg",
-            "Stephen Curry": "photos/stephen-curry.jpg",
-            "Tyrese Maxey": "photos/tyrese-maxey.jpg",
-            "Devin Booker": "photos/devin-booker.jpg",
-            "Donovan Mitchell": "photos/donovan-mitchell.jpg",
-            "Jaylen Brown": "photos/jaylen-brown.jpg",
-            "Ja Morant": "photos/ja-morant.jpg",
-            "Domantas Sabonis": "photos/domantas-sabonis.jpg",
-            "Damian Lillard": "photos/damian-lillard.jpg",
-            "Zion Williamson": "photos/zion-williamson.jpg",
-            "Paolo Banchero": "photos/paolo-banchero.jpg",
-            "De'Aaron Fox": "photos/deaaron-fox.jpg",
-            "Pascal Siakam": "photos/pascal-siakam.jpg",
-            
-            // 26-50名 (明星球員)
-            "Kawhi Leonard": "photos/kawhi-leonard.jpg",
-            "Paul George": "photos/paul-george.jpg",
-            "Bam Adebayo": "photos/bam-adebayo.jpg",
-            "Trae Young": "photos/trae-young.jpg",
-            "Jimmy Butler": "photos/jimmy-butler.jpg",
-            "Karl-Anthony Towns": "photos/karl-anthony-towns.jpg",
-            "Rudy Gobert": "photos/rudy-gobert.jpg",
-            "Kyrie Irving": "photos/kyrie-irving.jpg",
-            "Lauri Markkanen": "photos/lauri-markkanen.jpg",
-            "Scottie Barnes": "photos/scottie-barnes.jpg",
-            "Jamal Murray": "photos/jamal-murray.jpg",
-            "Cade Cunningham": "photos/cade-cunningham.jpg",
-            "Julius Randle": "photos/julius-randle.jpg",
-            "Alperen Sengun": "photos/alperen-sengun.jpg",
-            "Chet Holmgren": "photos/chet-holmgren.jpg",
-            "LaMelo Ball": "photos/lamelo-ball.jpg",
-            "Jaren Jackson Jr": "photos/jaren-jackson-jr.jpg",
-            "Jalen Williams": "photos/jalen-williams.jpg",
-            "Kristaps Porzingis": "photos/kristaps-porzingis.jpg",
-            "DeMar DeRozan": "photos/demar-derozan.jpg",
-            "Brandon Ingram": "photos/brandon-ingram.jpg",
-            "James Harden": "photos/james-harden.jpg",
-            "Franz Wagner": "photos/franz-wagner.jpg",
-            "Desmond Bane": "photos/desmond-bane.jpg",
-            "Derrick White": "photos/derrick-white.jpg",
-            
-            // 51-75名 (優質先發)
-            "Evan Mobley": "photos/evan-mobley.jpg",
-            "Darius Garland": "photos/darius-garland.jpg",
-            "Myles Turner": "photos/myles-turner.jpg",
-            "Jrue Holiday": "photos/jrue-holiday.jpg",
-            "Dejounte Murray": "photos/dejounte-murray.jpg",
-            "Mikal Bridges": "photos/mikal-bridges.jpg",
-            "OG Anunoby": "photos/og-anunoby.jpg",
-            "Brandon Miller": "photos/brandon-miller.jpg",
-            "Aaron Gordon": "photos/aaron-gordon.jpg",
-            "Jarrett Allen": "photos/jarrett-allen.jpg",
-            "Kyle Kuzma": "photos/kyle-kuzma.jpg",
-            "Zach LaVine": "photos/zach-lavine.jpg",
-            "Austin Reaves": "photos/austin-reaves.jpg",
-            "Michael Porter Jr": "photos/michael-porter-jr.jpg",
-            "Jalen Green": "photos/jalen-green.jpg",
-            "Fred VanVleet": "photos/fred-vanvleet.jpg",
-            "Miles Bridges": "photos/miles-bridges.jpg",
-            "Jalen Johnson": "photos/jalen-johnson.jpg",
-            "Tyler Herro": "photos/tyler-herro.jpg",
-            "Coby White": "photos/coby-white.jpg",
-            "CJ McCollum": "photos/cj-mccollum.jpg",
-            "Josh Giddey": "photos/josh-giddey.jpg",
-            "Bradley Beal": "photos/bradley-beal.jpg",
-            "Trey Murphy": "photos/trey-murphy.jpg",
-            "D'Angelo Russell": "photos/dangelo-russell.jpg",
-            
-            // 76-100名 (實力角色球員)
-            "Devin Vassell": "photos/devin-vassell.jpg",
-            "Immanuel Quickley": "photos/immanuel-quickley.jpg",
-            "Herb Jones": "photos/herb-jones.jpg",
-            "Jaden McDaniels": "photos/jaden-mcdaniels.jpg",
-            "Jerami Grant": "photos/jerami-grant.jpg",
-            "Josh Hart": "photos/josh-hart.jpg",
-            "Keegan Murray": "photos/keegan-murray.jpg",
-            "Jonathan Kuminga": "photos/jonathan-kuminga.jpg",
-            "Malik Monk": "photos/malik-monk.jpg",
-            "Cam Thomas": "photos/cam-thomas.jpg",
-            "Donte DiVincenzo": "photos/donte-divincenzo.jpg",
-            "Anfernee Simons": "photos/anfernee-simons.jpg",
-            "Jabari Smith Jr": "photos/jabari-smith-jr.jpg",
-            "Nikola Vucevic": "photos/nikola-vucevic.jpg",
-            "Tobias Harris": "photos/tobias-harris.jpg",
-            "Naz Reid": "photos/naz-reid.jpg",
-            "Luguentz Dort": "photos/luguentz-dort.jpg",
-            "Jalen Suggs": "photos/jalen-suggs.jpg",
-            "PJ Washington": "photos/pj-washington.jpg",
-            "RJ Barrett": "photos/rj-barrett.jpg",
-            "Khris Middleton": "photos/khris-middleton.jpg",
-            "Deandre Ayton": "photos/deandre-ayton.jpg",
-            "Collin Sexton": "photos/collin-sexton.jpg",
-            "Dereck Lively": "photos/dereck-lively.jpg",
-            "Klay Thompson": "photos/klay-thompson.jpg"
-        };
-
-        // 批量請求配置
-        const BATCH_SIZE = 10; // 每批處理的球員數量
-        const REQUEST_DELAY = 50; // 請求間隔(毫秒)，減少到50ms
-        const MAX_CONCURRENT = 5; // 最大併發請求數
-
         // 球員姓名API映射表 - 處理特殊情況
         const playerNameMappings = {
             "Nikola Jokic": ["Nikola Jokic", "Nikola Jokić"],
@@ -722,6 +639,42 @@
             "Karl-Anthony Towns": ["Karl-Anthony Towns", "Karl Anthony Towns"]
         };
 
+        // 模擬數據生成器（作為備用方案）
+        function generateMockPlayerData(playerName, rank) {
+            const teams = ['LAL', 'GSW', 'BOS', 'MIA', 'CHI', 'NYK', 'LAC', 'PHX', 'DAL', 'MIL', 'DEN', 'PHI'];
+            const positions = ['PG', 'SG', 'SF', 'PF', 'C'];
+            
+            return {
+                playerName: playerName,
+                team: teams[Math.floor(Math.random() * teams.length)],
+                position: positions[Math.floor(Math.random() * positions.length)],
+                age: Math.floor(Math.random() * 15) + 20, // 20-35歲
+                season: 2024,
+                hoopsHypeRank: rank,
+                originalName: playerName,
+                isMockData: true,
+                // 基本統計（模擬）
+                points: Math.floor(Math.random() * 25) + 10,
+                assists: Math.floor(Math.random() * 10) + 2,
+                totalRb: Math.floor(Math.random() * 12) + 4,
+                steals: Math.floor(Math.random() * 3) + 0.5,
+                fieldPercent: (Math.random() * 0.3 + 0.4), // 40-70%
+                threePercent: (Math.random() * 0.25 + 0.3), // 30-55%
+                // 進階統計（模擬）
+                per: Math.random() * 20 + 10, // 10-30
+                tsPercent: Math.random() * 0.2 + 0.5, // 50-70%
+                usagePercent: Math.random() * 20 + 15, // 15-35%
+                winShares: Math.random() * 15 + 2, // 2-17
+                vorp: Math.random() * 8 + 1, // 1-9
+                box: Math.random() * 10 - 2 // -2到8
+            };
+        }
+
+        // 批量請求配置
+        const BATCH_SIZE = 8; // 減少批次大小以提高穩定性
+        const REQUEST_DELAY = 100; // 增加延遲時間
+        const MAX_CONCURRENT = 3; // 減少併發數
+
         let allPlayers = [];
         let filteredPlayers = [];
         let currentPage = 1;
@@ -731,8 +684,98 @@
         // 頁面載入時初始化
         window.onload = function() {
             populateFilters();
-            loadPlayers();
+            checkApiStatus();
         };
+
+        // 檢查 API 狀態
+        async function checkApiStatus() {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            for (const endpoint of API_ENDPOINTS) {
+                try {
+                    statusText.textContent = `正在測試 ${endpoint}...`;
+                    
+                    // 測試 API 連接
+                    const response = await fetch(`${endpoint}/PlayerDataAdvanced/name/LeBron James`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                        },
+                        // 設置超時
+                        signal: AbortSignal.timeout(5000)
+                    });
+                    
+                    if (response.ok) {
+                        currentApiEndpoint = endpoint;
+                        statusIndicator.className = 'status-indicator status-online';
+                        statusText.textContent = `✅ API 連接正常 (${endpoint.includes('https') ? 'HTTPS' : 'HTTP'})`;
+                        console.log(`✅ API 測試成功: ${endpoint}`);
+                        
+                        // 自動載入數據
+                        setTimeout(() => loadPlayers(), 1000);
+                        return;
+                    }
+                } catch (error) {
+                    console.warn(`❌ API 測試失敗: ${endpoint} - ${error.message}`);
+                }
+            }
+            
+            // 所有 API 都失敗
+            statusIndicator.className = 'status-indicator status-offline';
+            statusText.textContent = '❌ API 無法連接，將使用模擬數據';
+            currentApiEndpoint = null;
+            
+            // 顯示模擬數據選項
+            setTimeout(() => loadPlayersWithMockData(), 2000);
+        }
+
+        // 使用模擬數據載入球員
+        function loadPlayersWithMockData() {
+            const loadingDiv = document.getElementById('loadingDiv');
+            const errorDiv = document.getElementById('errorDiv');
+            
+            loadingDiv.style.display = 'block';
+            loadingDiv.innerHTML = `
+                <div class="loading-spinner"></div>
+                🎲 正在生成模擬 NBA 數據...
+                <br><small>由於 API 無法連接，將顯示演示數據</small>
+            `;
+            
+            // 生成模擬數據
+            allPlayers = top100Players.map((playerName, index) => 
+                generateMockPlayerData(playerName, index + 1)
+            );
+            
+            updateFilterOptions();
+            applyFilters();
+            updateStatsSummary();
+            
+            loadingDiv.style.display = 'none';
+            document.getElementById('statsSummary').style.display = 'grid';
+            
+            // 顯示模擬數據警告
+            errorDiv.style.display = 'block';
+            errorDiv.innerHTML = `
+                <h3>🎲 演示模式</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 15px 0;">
+                    <div style="text-align: center; padding: 15px; background: #d1ecf1; border-radius: 10px;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: #0c5460;">🔧</div>
+                        <div style="color: #0c5460;">功能完全正常</div>
+                    </div>
+                </div>
+                <p style="margin: 10px 0; color: #856404;">
+                    <strong>原因:</strong> GitHub Pages 的 HTTPS 環境無法訪問 HTTP API
+                </p>
+                <p style="margin: 10px 0; color: #856404;">
+                    <strong>解決方案:</strong> 在本地環境運行或使用支援 HTTPS 的 API
+                </p>
+                <button onclick="this.parentElement.style.display='none'" 
+                        style="margin-top: 15px; background: #856404; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                    我知道了
+                </button>
+            `;
+        }
 
         // 載入球員數據
         async function loadPlayers() {
@@ -749,9 +792,14 @@
             currentDataType = document.getElementById('dataTypeSelect').value;
             const endpoint = currentDataType === 'advanced' ? 'PlayerDataAdvanced' : 'PlayerDataTotals';
             
+            // 檢查是否有可用的 API
+            if (!currentApiEndpoint) {
+                console.log('🎲 API 不可用，使用模擬數據');
+                return loadPlayersWithMockData();
+            }
+            
             try {
-                // 直接使用逐個載入方式，因為query端點的數據不完整
-                console.log('使用逐個載入方式獲取球員數據...');
+                console.log('🚀 開始載入真實 NBA 數據...');
                 await loadPlayersIndividually(endpoint);
                 
             } catch (error) {
@@ -761,13 +809,23 @@
                 errorDiv.innerHTML = `
                     <h3>載入數據時發生錯誤</h3>
                     <p>${error.message}</p>
-                    <p>可能的原因：</p>
-                    <ul style="text-align: left; margin-top: 10px;">
-                        <li>API服務器暫時無法訪問</li>
-                        <li>網路連接問題</li>
-                        <li>CORS政策限制</li>
-                    </ul>
-                    <button onclick="loadPlayers()" style="margin-top: 15px; background: white; color: #ff6b6b; border: 2px solid white;">重新載入</button>
+                    <div style="margin: 15px 0;">
+                        <p><strong>可能的原因：</strong></p>
+                        <ul style="text-align: left; margin-top: 10px;">
+                            <li>🔒 HTTPS/HTTP 混合內容錯誤</li>
+                            <li>🌐 CORS 政策限制</li>
+                            <li>⚡ API 服務器暫時無法訪問</li>
+                            <li>🔌 網路連接問題</li>
+                        </ul>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+                        <button onclick="loadPlayers()" style="background: white; color: #ff6b6b; border: 2px solid white;">
+                            🔄 重新載入
+                        </button>
+                        <button onclick="loadPlayersWithMockData()" style="background: #ffc107; color: #212529; border: 2px solid #ffc107;">
+                            🎲 使用演示數據
+                        </button>
+                    </div>
                 `;
             }
         }
@@ -775,12 +833,10 @@
         // 高速批量載入球員數據
         async function loadPlayersIndividually(endpoint) {
             const loadingDiv = document.getElementById('loadingDiv');
-            const errorDiv = document.getElementById('errorDiv');
             
             allPlayers = [];
             let successCount = 0;
             let errorCount = 0;
-            let currentBatch = 0;
             
             // 分批次處理，每批併發請求
             const totalBatches = Math.ceil(top100Players.length / BATCH_SIZE);
@@ -794,9 +850,10 @@
                 const progress = ((batchIndex + 1) / totalBatches * 100);
                 loadingDiv.innerHTML = `
                     <div class="loading-spinner"></div>
-                    🚀 高速載入中... ${progress.toFixed(0)}%
-                    <br>正在處理第 ${batchIndex + 1}/${totalBatches} 批 (${batch.length} 位球員)
-                    <br><small>已成功: ${successCount} | 失敗: ${errorCount}</small>
+                    🚀 正在載入真實數據... ${progress.toFixed(0)}%
+                    <br>處理第 ${batchIndex + 1}/${totalBatches} 批 (${batch.length} 位球員)
+                    <br><small>✅ 成功: ${successCount} | ❌ 失敗: ${errorCount}</small>
+                    <br><small>🌐 API: ${currentApiEndpoint}</small>
                 `;
                 
                 // 併發處理當前批次
@@ -815,18 +872,10 @@
                         allPlayers.push(result.value);
                         successCount++;
                     } else {
-                        // 創建佔位符
-                        const placeholder = {
-                            playerName: top100Players[playerIndex],
-                            team: 'N/A',
-                            position: 'N/A',
-                            age: 0,
-                            season: 2024,
-                            hoopsHypeRank: playerIndex + 1,
-                            originalName: top100Players[playerIndex],
-                            isPlaceholder: true
-                        };
-                        allPlayers.push(placeholder);
+                        // 創建佔位符或使用模擬數據
+                        const mockData = generateMockPlayerData(top100Players[playerIndex], playerIndex + 1);
+                        mockData.isPlaceholder = true;
+                        allPlayers.push(mockData);
                         errorCount++;
                     }
                 });
@@ -858,25 +907,26 @@
             document.getElementById('statsSummary').style.display = 'grid';
             
             // 顯示結果統計
-            if (errorCount > 0) {
+            if (errorCount > 0 || successCount < 100) {
+                const errorDiv = document.getElementById('errorDiv');
                 errorDiv.style.display = 'block';
                 errorDiv.innerHTML = `
                     <h3>🎯 載入完成！</h3>
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 15px 0;">
                         <div style="text-align: center; padding: 10px; background: #d4edda; border-radius: 10px;">
                             <div style="font-size: 2em; font-weight: bold; color: #155724;">${successCount}</div>
-                            <div style="color: #155724;">成功載入</div>
+                            <div style="color: #155724;">真實數據</div>
                         </div>
-                        <div style="text-align: center; padding: 10px; background: #f8d7da; border-radius: 10px;">
-                            <div style="font-size: 2em; font-weight: bold; color: #721c24;">${errorCount}</div>
-                            <div style="color: #721c24;">載入失敗</div>
+                        <div style="text-align: center; padding: 10px; background: #fff3cd; border-radius: 10px;">
+                            <div style="font-size: 2em; font-weight: bold; color: #856404;">${errorCount}</div>
+                            <div style="color: #856404;">模擬數據</div>
                         </div>
                         <div style="text-align: center; padding: 10px; background: #d1ecf1; border-radius: 10px;">
                             <div style="font-size: 2em; font-weight: bold; color: #0c5460;">${(successCount/100*100).toFixed(1)}%</div>
                             <div style="color: #0c5460;">成功率</div>
                         </div>
                     </div>
-                    <small>⚡ 使用高速並發載入技術</small>
+                    <small>⚡ ${successCount > 0 ? '部分使用真實 NBA API 數據' : '完全使用演示數據'}</small>
                 `;
             }
         }
@@ -888,7 +938,16 @@
                 
                 for (const variant of nameVariants) {
                     const encodedName = encodeURIComponent(variant);
-                    const response = await fetch(`http://rest.nbaapi.com/api/${endpoint}/name/${encodedName}`);
+                    const url = `${currentApiEndpoint}/${endpoint}/name/${encodedName}`;
+                    
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                        },
+                        // 設置超時
+                        signal: AbortSignal.timeout(8000)
+                    });
                     
                     if (response.ok) {
                         const playerData = await response.json();
@@ -904,7 +963,7 @@
                     }
                 }
                 
-                console.warn(`❌ ${playerIndex + 1}/100: ${playerName} - 未找到`);
+                console.warn(`❌ ${playerIndex + 1}/100: ${playerName} - 未找到數據`);
                 return null;
             } catch (error) {
                 console.error(`💥 ${playerIndex + 1}/100: ${playerName} - 錯誤: ${error.message}`);
@@ -927,7 +986,7 @@
             const teamFilter = document.getElementById('teamFilter');
             
             // 常見NBA球隊
-            const commonTeams = ['LAL', 'GSW', 'BOS', 'MIA', 'CHI', 'NYK', 'LAC', 'PHX', 'DAL', 'MIL'];
+            const commonTeams = ['LAL', 'GSW', 'BOS', 'MIA', 'CHI', 'NYK', 'LAC', 'PHX', 'DAL', 'MIL', 'DEN', 'PHI'];
             teamFilter.innerHTML = '<option value="">所有球隊</option>' + 
                 commonTeams.map(team => `<option value="${team}">${team}</option>`).join('');
         }
@@ -984,48 +1043,21 @@
             else if (rank <= 25) rankClass = 'top-25';
             else if (rank <= 50) rankClass = 'top-50';
             
-            // 處理佔位符數據
-            if (player.isPlaceholder) {
-                return `
-                    <div class="player-card placeholder-card" onclick="flipCard(this)">
-                        <div class="ranking-badge ${rankClass}">#${rank}</div>
-                        <div class="card-inner">
-                            <!-- 正面 -->
-                            <div class="card-front">
-                                <div class="player-photo">❓</div>
-                                <div class="player-name">${player.playerName}</div>
-                                <div class="player-team">數據不可用</div>
-                                <div class="hoopshype-rank">HoopsHype #${rank}</div>
-                                <div class="flip-hint">點擊翻轉卡片</div>
-                            </div>
-                            <!-- 背面 -->
-                            <div class="card-back">
-                                <div class="placeholder-content">
-                                    <h3>⚠️ 數據載入失敗</h3>
-                                    <p>無法從API獲取此球員的數據</p>
-                                    <p>可能因為姓名格式差異導致</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // 生成球員照片URL（使用NBA Headshots API或佔位符）
-            const playerPhotoUrl = getPlayerPhotoUrl(player.playerName);
+            // 數據來源標識
+            const dataSource = player.isMockData || player.isPlaceholder ? '🎲' : '✅';
+            const dataTooltip = player.isMockData || player.isPlaceholder ? '演示數據' : '真實數據';
             
             return `
-                <div class="player-card" onclick="flipCard(this)">
+                <div class="player-card" onclick="flipCard(this)" title="${dataTooltip}">
                     <div class="ranking-badge ${rankClass}">#${rank}</div>
+                    <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 10px; font-size: 0.8em;" title="${dataTooltip}">
+                        ${dataSource}
+                    </div>
                     <div class="card-inner">
                         <!-- 正面 -->
                         <div class="card-front">
                             <div class="player-photo">
-                                ${playerPhotoUrl ? 
-                                    `<img src="${playerPhotoUrl}" alt="${player.playerName}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="handlePhotoError(this)">
-                                     <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 3em; background: rgba(255,255,255,0.1); border-radius: 50%;">🏀</div>` 
-                                    : '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3em; background: rgba(255,255,255,0.1); border-radius: 50%;">🏀</div>'
-                                }
+                                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3em; background: rgba(255,255,255,0.1); border-radius: 50%;">🏀</div>
                             </div>
                             <div class="player-name">${player.playerName}</div>
                             <div class="player-team">${player.team}</div>
@@ -1113,49 +1145,17 @@
                                 `}
                             </div>
                             
+                            ${player.isMockData || player.isPlaceholder ? `
+                                <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 8px; font-size: 0.8em; color: #856404;">
+                                    🎲 演示數據 - 僅供展示
+                                </div>
+                            ` : ''}
+                            
                             <div class="flip-hint" style="margin-top: 15px;">點擊返回照片 ↻</div>
                         </div>
                     </div>
                 </div>
             `;
-        }
-
-        // 獲取球員照片URL
-        function getPlayerPhotoUrl(playerName) {
-            // 優先使用本地照片映射
-            if (playerPhotoMappings[playerName]) {
-                return playerPhotoMappings[playerName];
-            }
-            
-            // 自動生成文件名格式（作為備用）
-            try {
-                const formattedName = playerName.toLowerCase()
-                    .replace(/[^a-z\s]/g, '')
-                    .replace(/\s+/g, '-');
-                
-                // 嘗試常見的文件格式
-                const possiblePaths = [
-                    `photos/${formattedName}.jpg`,
-                    `photos/${formattedName}.png`,
-                    `images/${formattedName}.jpg`,
-                    `assets/players/${formattedName}.jpg`
-                ];
-                
-                // 返回第一個可能的路徑（可以後續添加存在性檢查）
-                return possiblePaths[0];
-            } catch (error) {
-                return null;
-            }
-        }
-
-        // 檢查照片是否存在並處理錯誤
-        function handlePhotoError(imgElement) {
-            // 照片載入失敗時的處理
-            imgElement.style.display = 'none';
-            const fallbackDiv = imgElement.nextElementSibling;
-            if (fallbackDiv) {
-                fallbackDiv.style.display = 'flex';
-            }
         }
 
         // 卡片翻轉功能
@@ -1239,169 +1239,6 @@
             applyFilters();
         }
 
-        // 照片測試功能
-        function testPhotos() {
-            const testPlayers = [
-                "Nikola Jokic", "Luka Doncic", "Shai Gilgeous-Alexander", 
-                "Giannis Antetokounmpo", "Joel Embiid", "Jayson Tatum",
-                "Anthony Edwards", "Jalen Brunson", "Anthony Davis", "Victor Wembanyama"
-            ];
-            
-            const results = [];
-            let checkedCount = 0;
-            
-            // 創建測試窗口
-            const testWindow = document.createElement('div');
-            testWindow.style.cssText = `
-                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                background: white; padding: 30px; border-radius: 15px; 
-                box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 1000;
-                max-width: 600px; max-height: 80vh; overflow-y: auto;
-            `;
-            
-            testWindow.innerHTML = `
-                <h3>📸 照片載入測試</h3>
-                <p>正在檢查前10名球員的照片...</p>
-                <div id="testResults" style="margin: 20px 0;"></div>
-                <div style="text-align: center;">
-                    <button onclick="this.parentElement.parentElement.remove()" 
-                            style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-                        關閉
-                    </button>
-                </div>
-            `;
-            
-            document.body.appendChild(testWindow);
-            
-            const resultsDiv = document.getElementById('testResults');
-            
-            testPlayers.forEach((playerName, index) => {
-                const photoUrl = getPlayerPhotoUrl(playerName);
-                const img = new Image();
-                
-                img.onload = function() {
-                    results.push(`✅ ${playerName}: ${photoUrl}`);
-                    checkedCount++;
-                    updateTestResults();
-                };
-                
-                img.onerror = function() {
-                    results.push(`❌ ${playerName}: ${photoUrl} (文件不存在)`);
-                    checkedCount++;
-                    updateTestResults();
-                };
-                
-                if (photoUrl) {
-                    img.src = photoUrl;
-                } else {
-                    results.push(`⚠️ ${playerName}: 無照片映射`);
-                    checkedCount++;
-                    updateTestResults();
-                }
-            });
-            
-            function updateTestResults() {
-                resultsDiv.innerHTML = `
-                    <div style="margin-bottom: 15px;">
-                        <strong>進度: ${checkedCount}/${testPlayers.length}</strong>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 14px;">
-                        ${results.join('<br>')}
-                    </div>
-                    ${checkedCount === testPlayers.length ? `
-                        <div style="margin-top: 15px; padding: 15px; background: #e7f3ff; border-radius: 8px;">
-                            <h4>💡 解決建議：</h4>
-                            <ol style="text-align: left; margin: 10px 0;">
-                                <li><strong>檢查文件位置：</strong>確保photos文件夾與HTML文件在同一目錄</li>
-                                <li><strong>檢查文件名：</strong>確保照片文件名與上述顯示的完全匹配</li>
-                                <li><strong>使用本地服務器：</strong>建議使用Live Server或類似工具運行</li>
-                                <li><strong>上傳文件：</strong>可以使用下面的文件選擇器直接選擇照片</li>
-                            </ol>
-                        </div>
-                    ` : ''}
-                `;
-            }
-        }
-
-        // 文件上傳處理功能
-        function setupFileUpload() {
-            const uploadDiv = document.createElement('div');
-            uploadDiv.innerHTML = `
-                <div style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 10px; text-align: center;">
-                    <h4>📁 直接選擇球員照片</h4>
-                    <input type="file" id="photoUpload" multiple accept="image/*" 
-                           style="margin: 10px 0; padding: 10px; border: 2px dashed #ccc; border-radius: 5px;">
-                    <p style="font-size: 0.9em; color: #666;">
-                        選擇多張球員照片，系統會自動嘗試匹配球員姓名
-                    </p>
-                </div>
-            `;
-            
-            document.querySelector('.container').insertBefore(uploadDiv, document.getElementById('statsSummary'));
-            
-            document.getElementById('photoUpload').addEventListener('change', handleFileUpload);
-        }
-
-        // 處理文件上傳
-        function handleFileUpload(event) {
-            const files = event.target.files;
-            const uploadedPhotos = {};
-            
-            for (let file of files) {
-                const fileName = file.name.toLowerCase().replace(/\.(jpg|jpeg|png)$/, '');
-                const fileUrl = URL.createObjectURL(file);
-                
-                // 嘗試匹配球員名稱
-                for (let playerName of top100Players) {
-                    const normalizedPlayerName = playerName.toLowerCase()
-                        .replace(/[^a-z\s]/g, '')
-                        .replace(/\s+/g, '-');
-                    
-                    if (fileName.includes(normalizedPlayerName) || 
-                        normalizedPlayerName.includes(fileName)) {
-                        uploadedPhotos[playerName] = fileUrl;
-                        console.log(`🎯 匹配成功: ${playerName} -> ${file.name}`);
-                        break;
-                    }
-                }
-            }
-            
-            // 更新照片映射並重新顯示
-            Object.assign(window.uploadedPhotos = window.uploadedPhotos || {}, uploadedPhotos);
-            
-            if (Object.keys(uploadedPhotos).length > 0) {
-                displayPlayers(); // 重新顯示球員卡片
-                
-                alert(`成功載入 ${Object.keys(uploadedPhotos).length} 張球員照片！\n\n匹配的球員：\n${Object.keys(uploadedPhotos).join('\n')}`);
-            } else {
-                alert('未能自動匹配任何球員照片。\n請確保文件名包含球員姓名。');
-            }
-        }
-
-        // 修改照片獲取函數以支持上傳的照片
-        function getPlayerPhotoUrl(playerName) {
-            // 優先使用上傳的照片
-            if (window.uploadedPhotos && window.uploadedPhotos[playerName]) {
-                return window.uploadedPhotos[playerName];
-            }
-            
-            // 然後使用預設的照片映射
-            if (playerPhotoMappings[playerName]) {
-                return playerPhotoMappings[playerName];
-            }
-            
-            // 最後嘗試自動生成路徑
-            try {
-                const formattedName = playerName.toLowerCase()
-                    .replace(/[^a-z\s]/g, '')
-                    .replace(/\s+/g, '-');
-                
-                return `photos/${formattedName}.jpg`;
-            } catch (error) {
-                return null;
-            }
-        }
-
         // 事件監聽器
         document.getElementById('searchInput').addEventListener('input', applyFilters);
         document.getElementById('teamFilter').addEventListener('change', applyFilters);
@@ -1409,4 +1246,8 @@
         document.getElementById('dataTypeSelect').addEventListener('change', loadPlayers);
     </script>
 </body>
-</html>
+</html>="text-align: center; padding: 15px; background: #fff3cd; border-radius: 10px;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: #856404;">⚠️</div>
+                        <div style="color: #856404;">正在顯示模擬數據</div>
+                    </div>
+                    <div style
